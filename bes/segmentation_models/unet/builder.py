@@ -16,9 +16,14 @@ def cse_block(prevlayer, prefix):
 
 
 def sse_block(prevlayer, prefix):
-    # Bug? Should be 1 here?
-    conv = Conv2D(K.int_shape(prevlayer)[3], (1, 1), padding="same", kernel_initializer="he_normal",
-                  activation='sigmoid', strides=(1, 1),
+    # # Bug? Should be 1 here?
+    # conv = Conv2D(K.int_shape(prevlayer)[3], (1, 1), padding="same", kernel_initializer="he_normal",
+    #               activation='sigmoid', strides=(1, 1),
+    #               name=prefix + "_conv")(prevlayer)
+    # conv = Multiply(name=prefix + "_mul")([prevlayer, conv])
+    # return conv Conv2D(1,(1,1), padding='valid')
+
+    conv = Conv2D(1, (1, 1), padding="same", kernel_initializer="he_normal", activation='sigmoid', strides=(1, 1),
                   name=prefix + "_conv")(prevlayer)
     conv = Multiply(name=prefix + "_mul")([prevlayer, conv])
     return conv
@@ -68,7 +73,7 @@ def build_unet(backbone, classes, skip_connection_layers,
         x = up_block(decoder_filters[i], i, upsample_rate=upsample_rate,
                      skip=skip_connection, use_batchnorm=use_batchnorm)(x)
 
-        x = csse_block(x, prefix='csse_block_{}'.format(i))
+        x = sse_block(x, prefix='sse_block_{}'.format(i))
 
         hyper_list.append(x)
 

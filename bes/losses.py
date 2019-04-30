@@ -3,6 +3,26 @@ import tensorflow as tf
 import numpy as np
 
 
+
+# Define custom loss
+def custom_se_loss(y_true, y_pred):
+    # Create a loss function that adds the SE loss for object detection and BCE loss
+    # Return a function
+    se_true = get_gt_se(y_true)
+    bce_se_loss = binary_crossentropy(se_true,  y_pred)
+
+    return bce_se_loss
+
+def get_gt_se(y_true):
+    ''' y_true is a 3D Variable BxHxW, output is 2D B x nClass, where class is 1 '''
+    gt_class_presence = tf.count_nonzero(y_true, [1, 2])
+    se_true = gt_class_presence > 0
+    return se_true
+
+
+
+
+
 def dice_coef(y_true, y_pred, smooth=1.0):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -201,10 +221,23 @@ def make_loss(loss_name):
         return loss
 
     elif loss_name == 'lovasz':
-        def loss(y, p):
+
             return lovasz_hinge(p, y, per_image=True, ignore=None)
 
-        return loss
 
+    elif loss_name == 'seloss':
+        def loss(y, outputs):
+            return custom_se_loss(y, outputs)
+        return loss
     else:
         ValueError("Unknown loss")
+
+#
+# # define two dictionaries: one that specifies the loss method for
+# # each output of the network along with a second dictionary that
+# # specifies the weight per loss
+# losses = {
+#     "segmentation_output": "prediction/Sigmoid",
+#     "object_detection_output": "se_auxillary/Sigmoid:0",
+# }
+# lossWeights = {"segmentation_output": 1.0, "object_detection_output": 1.0}
